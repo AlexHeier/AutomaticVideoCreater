@@ -1,0 +1,8 @@
+.env
+client_secret.json
+token.json
+
+text-to-speeched/
+raw-videos/
+edited-videos/
+
