@@ -13,3 +13,5 @@ This bot will create a quote video every time the main function runs. The bot is
 
 **Need to download**
 * ffmpeg - https://ffmpeg.org/download.html
+
+**Note** The *first* time the bot runs, you will get a link in the terminal. Follow that link and confirm whats needed to make the bot able to upload to youtube. This will create a token.json file.
