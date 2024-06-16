@@ -54,30 +54,30 @@ func ConvertAudioFile(inputPath, outputPath string, channels, sampleRate int) er
 	return nil
 }
 
-func ConvertTextToSpeech(text string) (string, error) {
+func ConvertTextToSpeech(text string) (string, []*speechpb.WordInfo, error) {
 	ctx := context.Background()
 
 	apiKey := os.Getenv("GOOGLE_API_KEY")
 	if apiKey == "" {
-		return "", fmt.Errorf("GOOGLE_API_KEY environment variable is not set")
+		return "", nil, fmt.Errorf("GOOGLE_API_KEY environment variable is not set")
 	}
 
 	client, err := texttospeech.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
-		return "", fmt.Errorf("failed to create client: %v", err)
+		return "", nil, fmt.Errorf("failed to create client: %v", err)
 	}
 	defer client.Close()
 
 	dir := "text-to-speeched"
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.Mkdir(dir, 0755); err != nil {
-			return "", fmt.Errorf("failed to create directory: %v", err)
+			return "", nil, fmt.Errorf("failed to create directory: %v", err)
 		}
 	}
 
 	fullPath, err := findNextAvailableFilename(dir)
 	if err != nil {
-		return "", fmt.Errorf("failed to find next available filename: %v", err)
+		return "", nil, fmt.Errorf("failed to find next available filename: %v", err)
 	}
 
 	req := &texttospeechpb.SynthesizeSpeechRequest{
@@ -97,16 +97,23 @@ func ConvertTextToSpeech(text string) (string, error) {
 
 	resp, err := client.SynthesizeSpeech(ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("failed to synthesize speech: %v", err)
+		return "", nil, fmt.Errorf("failed to synthesize speech: %v", err)
 	}
 	if resp == nil {
-		return "", fmt.Errorf("received nil response from SynthesizeSpeech")
+		return "", nil, fmt.Errorf("received nil response from SynthesizeSpeech")
 	}
 
 	if err := os.WriteFile(fullPath, resp.AudioContent, 0644); err != nil {
-		return "", fmt.Errorf("failed to write audio content to file: %v", err)
+		return "", nil, fmt.Errorf("failed to write audio content to file: %v", err)
 	}
-	return fullPath, nil
+
+	var wordTimings []*speechpb.WordInfo
+	wordTimings, err = ExtractWordTimings(fullPath)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return fullPath, wordTimings, nil
 }
 
 func ExtractWordTimings(audioFilePath string) ([]*speechpb.WordInfo, error) {

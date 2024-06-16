@@ -46,14 +46,9 @@ func createVideo(thema string) (string, error) {
 	}
 
 	// Convert text to speech
-	pathToVoice, err := voice.ConvertTextToSpeech(content)
+	pathToVoice, wordTimings, err := voice.ConvertTextToSpeech(content)
 	if err != nil {
 		return "", fmt.Errorf("failed to convert text to speech: %v", err)
-	}
-
-	wordTimings, err = voice.ExtractWordTimings(pathToVoice)
-	if err != nil {
-		return "", fmt.Errorf("failed to get word timings: %v", err)
 	}
 
 	// Fetch video
