@@ -1,15 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
-	editVideo "videoCreater/editVideo"
-	getVideo "videoCreater/getVideo"
-	global "videoCreater/global"
-	quote "videoCreater/quote"
-	upload "videoCreater/upload"
-	voice "videoCreater/voice"
+
+	createQuoteVideo "videoCreater/createQuoteVideo"
 
 	"github.com/joho/godotenv"
 )
@@ -19,23 +14,7 @@ func init() {
 }
 
 func main() {
-	CreateQuoteVideo()
-}
-
-func CreateQuoteVideo() {
-	thema := global.Random(global.Themas)
-	// Create the video
-	outputVideoPath, err := createVideo(thema)
-	if err != nil {
-		log.Fatalf("Failed to create video: %v", err)
-	}
-
-	if global.PostVideo {
-		err = upload.UploadVideo(outputVideoPath, thema)
-		if err != nil {
-			log.Fatalf("Failed to upload video: %v", err)
-		}
-	}
+	createQuoteVideo.CreateQuoteVideo()
 }
 
 // Initialize environment and verify configuration
@@ -64,35 +43,4 @@ func ensureDirExists(dir string) {
 			log.Fatalf("Failed to create directory %s: %v", dir, err)
 		}
 	}
-}
-
-// Create the video
-func createVideo(thema string) (string, error) {
-	// Fetch quote
-	content, author, err := quote.FetchQuote(thema)
-	if err != nil {
-		return "", fmt.Errorf("failed to fetch quote: %v", err)
-	}
-
-	// Convert text to speech
-	pathToVoice, err := voice.ConvertTextToSpeech(content)
-	if err != nil {
-		return "", fmt.Errorf("failed to convert text to speech: %v", err)
-	}
-	defer os.Remove(pathToVoice)
-
-	// Fetch video
-	pathToVideo, err := getVideo.FetchAndStoreVideo(thema)
-	if err != nil {
-		return "", fmt.Errorf("failed to fetch video: %v", err)
-	}
-	defer os.Remove(pathToVideo)
-
-	// Edit video
-	outputVideoPath, err := editVideo.EditVideo(pathToVideo, pathToVoice, thema, content, author)
-	if err != nil {
-		return "", fmt.Errorf("failed to edit video: %v", err)
-	}
-
-	return outputVideoPath, nil
 }

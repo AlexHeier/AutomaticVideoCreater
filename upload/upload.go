@@ -135,7 +135,7 @@ func UploadVideo(videoPath string, thema string) error {
 	themaCapitalized := titleCase.String(thema)
 	title := fmt.Sprintf("A Quote of %s", themaCapitalized)
 
-	description := fmt.Sprintf("A beautiful quote about %s. Leave a Like and Subscribe for more beautiful quotes <3 ", themaCapitalized)
+	description := fmt.Sprintf("A beautiful quote about %s. Leave a Like and Subscribe for more beautiful quotes ", themaCapitalized)
 
 	tags := make([]string, 0, global.TagLimit) // Initialize an empty slice with capacity for tagLimit elements
 
@@ -148,7 +148,7 @@ func UploadVideo(videoPath string, thema string) error {
 
 	// Sanitize description
 	description = sanitizeDescription(description, tags)
-	log.Println(description)
+
 	video := &youtube.Video{
 		Snippet: &youtube.VideoSnippet{
 			Title:       title,
@@ -156,7 +156,11 @@ func UploadVideo(videoPath string, thema string) error {
 			Tags:        tags,
 			CategoryId:  "22", // People & Blogs category
 		},
-		Status: &youtube.VideoStatus{PrivacyStatus: "public"},
+		Status: &youtube.VideoStatus{
+			PrivacyStatus:           "public",
+			MadeForKids:             global.MadeForKids,
+			SelfDeclaredMadeForKids: global.MadeForKids,
+		},
 	}
 
 	call := service.Videos.Insert([]string{"snippet", "status"}, video)
@@ -173,5 +177,6 @@ func UploadVideo(videoPath string, thema string) error {
 	}
 
 	fmt.Printf("Upload successful! Video ID: %v\n", response.Id)
+
 	return nil
 }

@@ -4,7 +4,11 @@ package global
 
 var PostVideo bool = false
 
-var VoiceSpeed float64 = 0.85
+var MadeForKids bool = false
+
+var VoiceSpeed float64 = 1
+
+var DeleteVideoAfterPost bool = false
 
 var Themas []string = []string{ // max 15 entries
 	"love",
@@ -13,7 +17,6 @@ var Themas []string = []string{ // max 15 entries
 	"life",
 	"courage",
 	"faith",
-	"relationships",
 	"trust",
 }
 
