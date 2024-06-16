@@ -69,9 +69,21 @@ func createVideo(thema string) (string, error) {
 	}
 
 	if global.DeleteVideoParts {
-		os.Remove(pathToVoice)
-		os.Remove(pathToVideo)
-		os.Remove("text-to-speeched/converted_audio.wav")
+		fmt.Println("Entering delete video parts section")
+		err = os.Remove(pathToVoice)
+		if err != nil {
+			fmt.Printf("failed to delete voice file: %v\n", err)
+		}
+
+		err = os.Remove(pathToVideo)
+		if err != nil {
+			fmt.Printf("failed to delete video file: %v\n", err)
+		}
+
+		err = os.Remove("text-to-speeched/converted_audio.wav")
+		if err != nil {
+			fmt.Printf("failed to delete converted audio file: %v\n", err)
+		}
 	}
 
 	return outputVideoPath, nil
