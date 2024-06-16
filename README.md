@@ -12,4 +12,4 @@ This bot will create a quote video every time the main function runs. The bot is
     * FAVQS_API_KEY=""
 
 **Need to download**
-* ffmpeg - https://ffmpeg.org/download.html
+* ffmpeg - https://ffmpeg.org/download.html or ```sudo apt install ffmpeg```

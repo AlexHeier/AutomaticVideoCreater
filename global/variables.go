@@ -12,9 +12,13 @@ var MadeForKids bool = false
 
 // The speed of the AI voice
 var VoiceSpeed float64 = 1
+var Pitch float64 = 0.5 // range -20 to 20
 
 // if the video is to be deleted when done
 var DeleteVideoAfterPost bool = false
+var DeleteVideoParts bool = true
+
+var CharactersPerLine int = 20
 
 // max 15 entries
 // make sure to test the new thema to make sure there exsist a quote and video for said thema.

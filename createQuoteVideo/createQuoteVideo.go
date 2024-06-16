@@ -10,6 +10,8 @@ import (
 	"videoCreater/global"
 	"videoCreater/upload"
 	"videoCreater/voice"
+
+	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
 )
 
 func CreateQuoteVideo() {
@@ -36,6 +38,7 @@ func CreateQuoteVideo() {
 
 // Create the video
 func createVideo(thema string) (string, error) {
+	var wordTimings []*speechpb.WordInfo
 	// Fetch quote
 	content, author, err := quote.FetchQuote(thema)
 	if err != nil {
@@ -47,19 +50,28 @@ func createVideo(thema string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to convert text to speech: %v", err)
 	}
-	defer os.Remove(pathToVoice)
+
+	wordTimings, err = voice.ExtractWordTimings(pathToVoice)
+	if err != nil {
+		return "", fmt.Errorf("failed to get word timings: %v", err)
+	}
 
 	// Fetch video
 	pathToVideo, err := getVideo.FetchAndStoreVideo(thema)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch video: %v", err)
 	}
-	defer os.Remove(pathToVideo)
 
 	// Edit video
-	outputVideoPath, err := editVideo.EditVideo(pathToVideo, pathToVoice, thema, content, author)
+	outputVideoPath, err := editVideo.EditVideo(pathToVideo, pathToVoice, wordTimings, thema, content, author)
 	if err != nil {
 		return "", fmt.Errorf("failed to edit video: %v", err)
+	}
+
+	if global.DeleteVideoParts {
+		os.Remove(pathToVoice)
+		os.Remove(pathToVideo)
+		os.Remove("text-to-speeched/converted_audio.wav")
 	}
 
 	return outputVideoPath, nil

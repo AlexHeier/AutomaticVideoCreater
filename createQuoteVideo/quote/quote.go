@@ -100,7 +100,7 @@ func FetchQuote(thema string) (string, string, error) {
 		}
 
 		// Check if the content length is less than or equal to 200 characters
-		if len(randomQuote.Body) <= 200 {
+		if len(randomQuote.Body) >= 50 {
 			return randomQuote.Body, randomQuote.Author, nil
 		} else {
 			log.Println("Selected quote does not meet length criteria. Retrying...")
