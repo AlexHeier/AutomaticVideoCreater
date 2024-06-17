@@ -58,13 +58,12 @@ func createVideo(thema string) (string, error) {
 	}
 
 	// Edit video
-	outputVideoPath, err := editVideo.EditVideo(pathToVideo, pathToVoice, wordTimings, thema, content, author)
+	outputVideoPath, err := editVideo.EditVideo(pathToVideo, pathToVoice, wordTimings, thema, author)
 	if err != nil {
 		return "", fmt.Errorf("failed to edit video: %v", err)
 	}
 
 	if global.DeleteVideoParts {
-		fmt.Println("Entering delete video parts section")
 		err = os.Remove(pathToVoice)
 		if err != nil {
 			fmt.Printf("failed to delete voice file: %v\n", err)

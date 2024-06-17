@@ -32,7 +32,6 @@ func FetchQuote(thema string) (string, string, error) {
 	if apiKey == "" {
 		return "", "", fmt.Errorf("FAVQS_API_KEY environment variable not set")
 	}
-	log.Println(thema)
 
 	// Create a new random generator
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))

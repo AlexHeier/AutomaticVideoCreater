@@ -104,7 +104,6 @@ func FetchAndStoreVideo(thema string) (string, error) {
 			return "", fmt.Errorf("failed to download video: %v", err)
 		}
 
-		log.Printf("Video downloaded to: %s\n", videoPath)
 		return videoPath, nil
 	}
 

@@ -2,12 +2,13 @@ package editVideo
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"unicode"
+
 	"videoCreater/global"
 
 	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
@@ -41,68 +42,85 @@ func findNextAvailableFilename(dir, prefix, extension string) string {
 	}
 }
 
+// abbreviateAuthorName shortens the author's name if it is longer than 20 characters
+func abbreviateAuthorName(author string) string {
+	if len(author) > 20 {
+		words := strings.Fields(author)
+		if len(words) > 1 {
+			return fmt.Sprintf("%s %s", words[0], words[len(words)-1])
+		}
+	}
+	return author
+}
+
+// splitTextIntoWordsWithTimings splits the text into words and calculates the timings for each word.
+func splitTextIntoWordsWithTimings(wordTimings []*speechpb.WordInfo) ([]string, []string) {
+	var words []string
+	var timingStrings []string
+
+	for i := 0; i < len(wordTimings); i++ {
+		word := wordTimings[i].Word
+		startTime := durationToSeconds(wordTimings[i].StartTime)
+		var endTime float64
+
+		if i < len(wordTimings)-1 {
+			endTime = durationToSeconds(wordTimings[i+1].StartTime)
+		} else {
+			endTime = durationToSeconds(wordTimings[i].EndTime)
+		}
+
+		words = append(words, word)
+		timingStrings = append(timingStrings, fmt.Sprintf("between(t,%f,%f)", startTime, endTime))
+	}
+
+	return words, timingStrings
+}
+
 // Utility function to convert duration to float64 seconds
 func durationToSeconds(d *durationpb.Duration) float64 {
 	return float64(d.Seconds) + float64(d.Nanos)*1e-9
 }
 
-// splitTextIntoLinesWithTimings returns sentences with their timings
-func splitTextIntoLinesWithTimings(text string, maxLineLength int, wordTimings []*speechpb.WordInfo) ([]string, []string, error) {
-	var lines []string
-	var timingStrings []string
-
-	words := strings.Fields(text)
-	currentLine := ""
-	var lineTimings []*speechpb.WordInfo
-
-	for index, word := range words {
-		if index >= len(wordTimings) {
-			break
-		}
-
-		if len(currentLine)+len(word)+1 > maxLineLength {
-			if len(currentLine) > 0 {
-				lines = append(lines, currentLine)
-				start := durationToSeconds(lineTimings[0].StartTime)
-				end := durationToSeconds(lineTimings[len(lineTimings)-1].EndTime)
-				timingStrings = append(timingStrings, fmt.Sprintf("between(t,%f,%f)", start, end))
-			}
-			currentLine = word
-			lineTimings = []*speechpb.WordInfo{wordTimings[index]}
-		} else {
-			if len(currentLine) > 0 {
-				currentLine += " "
-			}
-			currentLine += word
-			lineTimings = append(lineTimings, wordTimings[index])
-		}
+func getVideoDuration(videoPath string) (float64, error) {
+	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", videoPath)
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get video duration: %v", err)
 	}
-
-	if len(currentLine) > 0 && len(lineTimings) > 0 {
-		lines = append(lines, currentLine)
-		start := durationToSeconds(lineTimings[0].StartTime)
-		end := durationToSeconds(lineTimings[len(lineTimings)-1].EndTime)
-		timingStrings = append(timingStrings, fmt.Sprintf("between(t,%f,%f)", start, end))
+	videoDuration, err := strconv.ParseFloat(strings.TrimSpace(string(output)), 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse video duration: %v", err)
 	}
-
-	return lines, timingStrings, nil
+	return videoDuration, nil
 }
 
-func EditVideo(inputVideoPath string, inputAudioPath string, wordTimings []*speechpb.WordInfo, thema string, content string, author string) (string, error) {
+func EditVideo(inputVideoPath string, inputAudioPath string, wordTimings []*speechpb.WordInfo, thema string, author string) (string, error) {
 	thema = capitalizeFirstLetter(thema)
 	title := fmt.Sprintf("A Quote of %s", thema)
-	authorText := fmt.Sprintf("- %s", author)
+	authorText := fmt.Sprintf("- %s", abbreviateAuthorName(author))
 
-	// Escape text for FFmpeg
-	escapedTitle := escapeText(title)
-	contentLines, timingStrings, err := splitTextIntoLinesWithTimings(content, global.CharactersPerLine, wordTimings)
+	// Get audio duration using ffprobe
+	audioDuration, err := getVideoDuration(inputAudioPath)
 	if err != nil {
 		return "", err
 	}
+
+	// Get video duration using ffprobe
+	videoDuration, err := getVideoDuration(inputVideoPath)
+	if err != nil {
+		return "", err
+	}
+
+	// Calculate the number of times to loop the video
+	loopCount := int(audioDuration / videoDuration)
+
+	// Escape text for FFmpeg
+	escapedTitle := escapeText(title)
+	words, timingStrings := splitTextIntoWordsWithTimings(wordTimings)
 	escapedAuthorText := escapeText(authorText)
 
 	// Specify the path to the font file
-	fontPath := "fonts/Fredoka-VariableFont_wdth,wght.ttf"
+	fontPath := "fonts/PermanentMarker-Regular.ttf"
 
 	// Determine the output video path
 	outputDir := "edited-videos"
@@ -110,29 +128,29 @@ func EditVideo(inputVideoPath string, inputAudioPath string, wordTimings []*spee
 
 	// Build drawtext filters for the content lines
 	var drawtextFilters []string
+	// Title near the top of the screen
 	drawtextFilters = append(drawtextFilters, fmt.Sprintf(
-		"drawtext=fontfile='%s':text='%s':x=(w-text_w)/2:y=50:fontsize=110:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=10",
-		fontPath, escapedTitle))
-	yPos := 960 // Center vertically for 1080p video
-	for i, line := range contentLines {
-		if i >= len(timingStrings) {
-			return "", fmt.Errorf("timingStrings index %d out of range with length %d", i, len(timingStrings))
-		}
+		"drawtext=fontfile='%s':text='%s':x=(w-text_w)/2:y=50:fontsize=110:fontcolor=white:borderw=%d:bordercolor=black",
+		fontPath, escapedTitle, global.BorderThickness))
+	// Words centered in the middle of the screen
+	for i, word := range words {
 		drawtextFilters = append(drawtextFilters, fmt.Sprintf(
-			"drawtext=fontfile='%s':text='%s':x=(w-text_w)/2:y=%d:fontsize=100:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=10:enable='%s'",
-			fontPath, escapeText(line), yPos, timingStrings[i]))
+			"drawtext=fontfile='%s':text='%s':x=(w-text_w)/2:y=(h/2-text_h/2):fontsize=100:fontcolor=white:borderw=%d:bordercolor=black:enable='%s'",
+			fontPath, escapeText(word), global.BorderThickness, timingStrings[i]))
 	}
+	// Author text at the bottom of the screen
 	drawtextFilters = append(drawtextFilters, fmt.Sprintf(
-		"drawtext=fontfile='%s':text='%s':x=(w-text_w)/2:y=h-th-50:fontsize=100:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=10",
-		fontPath, escapedAuthorText))
+		"drawtext=fontfile='%s':text='%s':x=(w-text_w)/2:y=h-th-50:fontsize=100:fontcolor=white:borderw=%d:bordercolor=black",
+		fontPath, escapedAuthorText, global.BorderThickness))
 
 	// Combine all drawtext filters
 	filterComplex := fmt.Sprintf(
 		"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,%s[v];[1:a]volume=2[a]",
 		strings.Join(drawtextFilters, ","))
 
-	// FFmpeg command for creating the video with text overlays and adding audio
-	cmd := exec.Command("ffmpeg",
+	// FFmpeg command for creating the video with text overlays and adding audio, and looping the video if necessary
+	cmdArgs := []string{
+		"-stream_loop", strconv.Itoa(loopCount), // Loop the video input
 		"-i", inputVideoPath,
 		"-i", inputAudioPath,
 		"-filter_complex", filterComplex,
@@ -141,7 +159,11 @@ func EditVideo(inputVideoPath string, inputAudioPath string, wordTimings []*spee
 		"-c:v", "libx264",
 		"-c:a", "aac",
 		"-shortest",
-		"-y", outputFilename)
+		"-y", outputFilename,
+	}
+
+	// FFmpeg command for creating the video with text overlays and adding audio
+	cmd := exec.Command("ffmpeg", cmdArgs...)
 
 	// Run FFmpeg command
 	output, err := cmd.CombinedOutput()
@@ -149,6 +171,6 @@ func EditVideo(inputVideoPath string, inputAudioPath string, wordTimings []*spee
 		return "", fmt.Errorf("FFmpeg command failed: %v, output: %s", err, string(output))
 	}
 
-	log.Printf("Done creating video %s", outputFilename)
+	fmt.Printf("Done creating video %s", outputFilename)
 	return outputFilename, nil
 }
