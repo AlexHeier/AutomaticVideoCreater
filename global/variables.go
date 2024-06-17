@@ -15,6 +15,7 @@ var MadeForKids bool = false
 var VoiceSpeed float64 = 0.95
 var Pitch float64 = 1 // range -20 to 20
 
+// Text on screen
 var BorderThickness = 10
 
 // if the video is to be deleted when done
