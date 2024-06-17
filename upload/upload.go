@@ -13,8 +13,6 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -109,7 +107,7 @@ func sanitizeDescription(baseDescription string, tags []string) string {
 	return description
 }
 
-func UploadVideo(videoPath string, thema string) error {
+func UploadVideo(videoPath, description, title, categoryID string, tags []string) error {
 	ctx := context.Background()
 
 	b, err := os.ReadFile("client_secret.json")
@@ -130,31 +128,24 @@ func UploadVideo(videoPath string, thema string) error {
 		return fmt.Errorf("unable to create YouTube service: %v", err)
 	}
 
-	// Capitalize the first letter of the theme using the cases package
-	titleCase := cases.Title(language.English, cases.NoLower)
-	themaCapitalized := titleCase.String(thema)
-	title := fmt.Sprintf("A Quote of %s", themaCapitalized)
+	postTags := make([]string, 0, global.TagLimit) // Initialize an empty slice with capacity for tagLimit elements
 
-	description := fmt.Sprintf("A beautiful quote about %s. Leave a Like and Subscribe for more beautiful quotes ", themaCapitalized)
-
-	tags := make([]string, 0, global.TagLimit) // Initialize an empty slice with capacity for tagLimit elements
-
-	for i, t := range global.Themas {
+	for i, t := range tags {
 		if i >= global.TagLimit {
 			break // Stop the loop if the limit is reached
 		}
-		tags = append(tags, t) // Append each tag to the slice
+		postTags = append(postTags, t) // Append each tag to the slice
 	}
 
 	// Sanitize description
-	description = sanitizeDescription(description, tags)
+	description = sanitizeDescription(description, postTags)
 
 	video := &youtube.Video{
 		Snippet: &youtube.VideoSnippet{
 			Title:       title,
 			Description: description,
-			Tags:        tags,
-			CategoryId:  "22", // People & Blogs category
+			Tags:        postTags,
+			CategoryId:  categoryID, // People & Blogs category
 		},
 		Status: &youtube.VideoStatus{
 			PrivacyStatus:           "public",

@@ -3,10 +3,12 @@ package createquotevideo
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strings"
-	"videoCreater/createQuoteVideo/editVideo"
+	"time"
 	"videoCreater/createQuoteVideo/quote"
+	"videoCreater/editVideo"
 	"videoCreater/getVideo"
 	"videoCreater/global"
 	"videoCreater/upload"
@@ -16,15 +18,19 @@ import (
 )
 
 func CreateQuoteVideo() {
-	thema := global.Random(global.Themas)
+	thema := random(global.Themas)
 	// Create the video
 	outputVideoPath, err := createVideo(thema)
 	if err != nil {
 		log.Fatalf("Failed to create video: %v", err)
 	}
 
+	title := fmt.Sprintf("A Quote of %s", strings.Title(thema))
+	description := fmt.Sprintf("A beautiful quote about %s. Leave a Like and Subscribe for more beautiful quotes ", strings.Title(thema))
+	chategoryID := "22"
+
 	if global.PostVideo {
-		err = upload.UploadVideo(outputVideoPath, thema)
+		err = upload.UploadVideo(outputVideoPath, description, title, chategoryID, global.Themas)
 		if err != nil {
 			log.Fatalf("Failed to upload video: %v", err)
 		}
@@ -70,4 +76,9 @@ func createVideo(thema string) (string, error) {
 	}
 
 	return outputVideoPath, nil
+}
+
+func random(array []string) string {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return array[r.Intn(len(array))]
 }

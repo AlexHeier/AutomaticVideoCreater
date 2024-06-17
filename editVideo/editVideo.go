@@ -101,12 +101,9 @@ func splitTitleIntoLines(title string, maxLength int) []string {
 	for _, word := range words {
 		if len(currentLine)+len(word)+1 > maxLength {
 			lines = append(lines, currentLine)
-			currentLine = word
+			currentLine = word + " "
 		} else {
-			if currentLine != "" {
-				currentLine += " "
-			}
-			currentLine += word
+			currentLine += word + " "
 		}
 	}
 	if currentLine != "" {
@@ -147,7 +144,7 @@ func EditVideo(inputVideoPath string, inputAudioPath string, wordTimings []*spee
 	outputDir := "edited-videos"
 	outputFilename := findNextAvailableFilename(outputDir, removeSpaces(title), ".mp4")
 
-	titleLines := splitTitleIntoLines(title, 20)
+	titleLines := splitTitleIntoLines(title, 15)
 	// Build drawtext filters for the content lines
 	var drawtextFilters []string
 	// Title near the top of the screen
@@ -196,6 +193,6 @@ func EditVideo(inputVideoPath string, inputAudioPath string, wordTimings []*spee
 		return "", fmt.Errorf("FFmpeg command failed: %v, output: %s", err, string(output))
 	}
 
-	fmt.Printf("Done creating video %s", outputFilename)
+	fmt.Printf("Done creating video %s\n", outputFilename)
 	return outputFilename, nil
 }
