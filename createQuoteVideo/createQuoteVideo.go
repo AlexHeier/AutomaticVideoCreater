@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"videoCreater/createQuoteVideo/editVideo"
 	"videoCreater/createQuoteVideo/quote"
 	"videoCreater/getVideo"
@@ -50,34 +51,22 @@ func createVideo(thema string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to convert text to speech: %v", err)
 	}
+	defer os.Remove(pathToVoice)
+	defer os.Remove("text-to-speeched/converted_audio.wav")
 
 	// Fetch video
 	pathToVideo, err := getVideo.FetchAndStoreVideo(thema)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch video: %v", err)
 	}
+	defer os.Remove(pathToVideo)
 
 	// Edit video
-	outputVideoPath, err := editVideo.EditVideo(pathToVideo, pathToVoice, wordTimings, thema, author)
+	var title string = fmt.Sprintf("A Quote of %s", strings.Title(thema))
+
+	outputVideoPath, err := editVideo.EditVideo(pathToVideo, pathToVoice, wordTimings, title, author)
 	if err != nil {
 		return "", fmt.Errorf("failed to edit video: %v", err)
-	}
-
-	if global.DeleteVideoParts {
-		err = os.Remove(pathToVoice)
-		if err != nil {
-			fmt.Printf("failed to delete voice file: %v\n", err)
-		}
-
-		err = os.Remove(pathToVideo)
-		if err != nil {
-			fmt.Printf("failed to delete video file: %v\n", err)
-		}
-
-		err = os.Remove("text-to-speeched/converted_audio.wav")
-		if err != nil {
-			fmt.Printf("failed to delete converted audio file: %v\n", err)
-		}
 	}
 
 	return outputVideoPath, nil

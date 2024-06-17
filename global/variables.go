@@ -6,19 +6,19 @@ VAR THAT CAN BE CHANGED
 
 // If the video is to be posted to Youtube or not.
 var PostVideo bool = false
+var ChannelName string = "QuotePixel"
 
 // Flag for Youtube if the video is made for kids or not
 var MadeForKids bool = false
 
 // The speed of the AI voice
-var VoiceSpeed float64 = 1
-var Pitch float64 = 5 // range -20 to 20
+var VoiceSpeed float64 = 0.95
+var Pitch float64 = 1 // range -20 to 20
+
+var BorderThickness = 10
 
 // if the video is to be deleted when done
 var DeleteVideoAfterPost bool = false
-var DeleteVideoParts bool = true
-
-var BorderThickness = 5
 
 // max 15 entries
 // make sure to test the new thema to make sure there exsist a quote and video for said thema.
