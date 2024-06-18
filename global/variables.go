@@ -11,12 +11,14 @@ var ChannelName string = "QuotePixel"
 // Flag for Youtube if the video is made for kids or not
 var MadeForKids bool = false
 
-// The speed of the AI voice
-var VoiceSpeed float64 = 0.95
-var Pitch float64 = 1 // range -20 to 20
+// AI voice
+var VoiceID string = "Scarlett"
+var VoiceSpeed string = "0" // -1 to 1
+var VoicePitch string = "1" // 0.5 to 1.5
+var Bitrate string = "192k" // 320k, 256k, 192k, ...
 
 // Text on screen
-var BorderThickness = 10
+var BorderThickness int = 10
 
 // if the video is to be deleted when done
 var DeleteVideoAfterPost bool = false

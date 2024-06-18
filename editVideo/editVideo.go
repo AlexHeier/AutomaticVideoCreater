@@ -9,9 +9,7 @@ import (
 	"strings"
 
 	"videoCreater/global"
-
-	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
-	"google.golang.org/protobuf/types/known/durationpb"
+	voice "videoCreater/voice"
 )
 
 // escapeText escapes the text to be used in ffmpeg drawtext filter
@@ -45,19 +43,19 @@ func abbreviateAuthorName(author string) string {
 }
 
 // splitTextIntoWordsWithTimings splits the text into words and calculates the timings for each word.
-func splitTextIntoWordsWithTimings(wordTimings []*speechpb.WordInfo, author string, audioDuration float64) ([]string, []string) {
+func splitTextIntoWordsWithTimings(wordTimings []voice.WordInfo, author string, audioDuration float64) ([]string, []string) {
 	var words []string
 	var timingStrings []string
 	var endTime float64
 
 	for i := 0; i < len(wordTimings); i++ {
 		word := wordTimings[i].Word
-		startTime := durationToSeconds(wordTimings[i].StartTime)
+		startTime := wordTimings[i].StartTime
 
 		if i < len(wordTimings)-1 {
-			endTime = durationToSeconds(wordTimings[i+1].StartTime)
+			endTime = wordTimings[i+1].StartTime
 		} else {
-			endTime = durationToSeconds(wordTimings[i].EndTime)
+			endTime = wordTimings[i].EndTime
 		}
 
 		words = append(words, word)
@@ -69,11 +67,6 @@ func splitTextIntoWordsWithTimings(wordTimings []*speechpb.WordInfo, author stri
 	timingStrings = append(timingStrings, fmt.Sprintf("between(t,%f,%f)", endTime, audioDuration))
 
 	return words, timingStrings
-}
-
-// Utility function to convert duration to float64 seconds
-func durationToSeconds(d *durationpb.Duration) float64 {
-	return float64(d.Seconds) + float64(d.Nanos)*1e-9
 }
 
 func getVideoDuration(videoPath string) (float64, error) {
@@ -112,8 +105,7 @@ func splitTitleIntoLines(title string, maxLength int) []string {
 	return lines
 }
 
-func EditVideo(inputVideoPath string, inputAudioPath string, wordTimings []*speechpb.WordInfo, title string, author string) (string, error) {
-
+func EditVideo(inputVideoPath string, inputAudioPath string, wordTimings []voice.WordInfo, title string, author string) (string, error) {
 	authorText := fmt.Sprintf("- %s", abbreviateAuthorName(author))
 	fontSize := 100         // Set the font size for the author text
 	lineHeight := 110 * 1.2 // Set the line height for the title text

@@ -13,8 +13,6 @@ import (
 	"videoCreater/global"
 	"videoCreater/upload"
 	"videoCreater/voice"
-
-	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
 )
 
 func CreateQuoteVideo() {
@@ -45,7 +43,7 @@ func CreateQuoteVideo() {
 
 // Create the video
 func createVideo(thema string) (string, error) {
-	var wordTimings []*speechpb.WordInfo
+	var wordTimings []voice.WordInfo
 	// Fetch quote
 	content, author, err := quote.FetchQuote(thema)
 	if err != nil {
@@ -58,7 +56,6 @@ func createVideo(thema string) (string, error) {
 		return "", fmt.Errorf("failed to convert text to speech: %v", err)
 	}
 	defer os.Remove(pathToVoice)
-	defer os.Remove("text-to-speeched/converted_audio.wav")
 
 	// Fetch video
 	pathToVideo, err := getVideo.FetchAndStoreVideo(thema)

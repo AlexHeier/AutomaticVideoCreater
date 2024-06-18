@@ -10,6 +10,7 @@ This bot will create a quote video every time the main function runs. The bot is
     * GOOGLE_API_KEY=""
     * PEXELS_API_KEY=""
     * FAVQS_API_KEY=""
+    * UNREAL_SPEECH_API_KEY=""
 
 **Need to download**
 * ffmpeg - https://ffmpeg.org/download.html or ```sudo apt install ffmpeg```

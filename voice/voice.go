@@ -1,24 +1,36 @@
 package voice
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 	"videoCreater/global"
-
-	texttospeech "cloud.google.com/go/texttospeech/apiv1"
-	texttospeechpb "cloud.google.com/go/texttospeech/apiv1/texttospeechpb"
-	"google.golang.org/api/option"
-
-	speech "cloud.google.com/go/speech/apiv1"
-	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
 )
 
-func findNextAvailableFilename(dir string) (string, error) {
+// UnrealSpeechResponse is the struct to unmarshal the response from UnrealSpeech's API
+type UnrealSpeechResponse struct {
+	OutputUri     string `json:"OutputUri"`
+	TimestampsUri string `json:"TimestampsUri"`
+}
+
+// WordInfo contains the timing information for a word
+type WordInfo struct {
+	StartTime float64 `json:"start"` // The start time of the word in the audio
+	EndTime   float64 `json:"end"`   // The end time of the word in the audio
+	Word      string  `json:"word"`  // The word text
+}
+
+// findNextAvailableFilename finds the next available filename in the given directory with the specified extension
+func findNextAvailableFilename(dir string, extension string) (string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return "", err
@@ -27,8 +39,8 @@ func findNextAvailableFilename(dir string) (string, error) {
 	occupied := make(map[int]bool)
 	for _, entry := range entries {
 		name := entry.Name()
-		if strings.HasPrefix(name, "voice") && strings.HasSuffix(name, ".mp3") {
-			numStr := strings.TrimSuffix(strings.TrimPrefix(name, "voice"), ".mp3")
+		if strings.HasPrefix(name, "voice") && strings.HasSuffix(name, extension) {
+			numStr := strings.TrimSuffix(strings.TrimPrefix(name, "voice"), extension)
 			num, err := strconv.Atoi(numStr)
 			if err == nil {
 				occupied[num] = true
@@ -39,34 +51,86 @@ func findNextAvailableFilename(dir string) (string, error) {
 	i := 1
 	for ; occupied[i]; i++ {
 	}
-	return filepath.Join(dir, "voice"+strconv.Itoa(i)+".mp3"), nil
+	return filepath.Join(dir, fmt.Sprintf("voice%d%s", i, extension)), nil
 }
 
-func ConvertAudioFile(inputPath, outputPath string, channels, sampleRate int) error {
-	if inputPath == "" || outputPath == "" {
-		return fmt.Errorf("invalid input or output path")
+// downloadFile downloads a file from the given URL and writes it to the given path
+func downloadFile(url string, path string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to download file from URL %s: %v", url, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download file from URL %s: status code %d", url, resp.StatusCode)
 	}
 
-	cmd := exec.Command("ffmpeg", "-i", inputPath, "-ac", fmt.Sprintf("%d", channels), "-ar", fmt.Sprintf("%d", sampleRate), outputPath)
-	if _, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("ffmpeg error: %v", err)
+	file, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("failed to create file %s: %v", path, err)
 	}
+	defer file.Close()
+
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to write file %s: %v", path, err)
+	}
+
 	return nil
 }
 
-func ConvertTextToSpeech(text string) (string, []*speechpb.WordInfo, error) {
-	ctx := context.Background()
+// ConvertTextToSpeech sends text to UnrealSpeech API and returns the path to the saved MP3 file and the timing information of words
+func ConvertTextToSpeech(text string) (string, []WordInfo, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	apiKey := os.Getenv("GOOGLE_API_KEY")
+	apiKey := os.Getenv("UNREAL_SPEECH_API_KEY")
 	if apiKey == "" {
-		return "", nil, fmt.Errorf("GOOGLE_API_KEY environment variable is not set")
+		log.Println("API key is not set")
+		return "", nil, fmt.Errorf("UNREAL_SPEECH_API_KEY environment variable is not set")
 	}
 
-	client, err := texttospeech.NewClient(ctx, option.WithAPIKey(apiKey))
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to create client: %v", err)
+	reqBody := map[string]interface{}{
+		"Text":          text,
+		"VoiceId":       global.VoiceID,
+		"Bitrate":       global.Bitrate,
+		"Speed":         global.VoiceSpeed,
+		"Pitch":         global.VoicePitch,
+		"TimestampType": "word",
 	}
-	defer client.Close()
+	reqBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	url := "https://api.v6.unrealspeech.com/speech"
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(reqBytes))
+	if err != nil {
+		return "", nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Authorization", "Bearer "+apiKey)
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to send request to UnrealSpeech API: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("API returned non-OK status: %s, body: %s", resp.Status, string(body))
+		return "", nil, fmt.Errorf("UnrealSpeech API returned non-OK status: %s, body: %s", resp.Status, string(body))
+	}
+
+	var apiResponse UnrealSpeechResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResponse); err != nil {
+		return "", nil, fmt.Errorf("failed to decode response: %v", err)
+	}
 
 	dir := "text-to-speeched"
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -75,99 +139,32 @@ func ConvertTextToSpeech(text string) (string, []*speechpb.WordInfo, error) {
 		}
 	}
 
-	fullPath, err := findNextAvailableFilename(dir)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to find next available filename: %v", err)
-	}
-
-	req := &texttospeechpb.SynthesizeSpeechRequest{
-		Input: &texttospeechpb.SynthesisInput{
-			InputSource: &texttospeechpb.SynthesisInput_Text{Text: text},
-		},
-		Voice: &texttospeechpb.VoiceSelectionParams{
-			LanguageCode: "en-US",
-			SsmlGender:   texttospeechpb.SsmlVoiceGender_NEUTRAL,
-		},
-		AudioConfig: &texttospeechpb.AudioConfig{
-			AudioEncoding: texttospeechpb.AudioEncoding_MP3,
-			SpeakingRate:  global.VoiceSpeed,
-			Pitch:         global.Pitch,
-		},
-	}
-
-	resp, err := client.SynthesizeSpeech(ctx, req)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to synthesize speech: %v", err)
-	}
-	if resp == nil {
-		return "", nil, fmt.Errorf("received nil response from SynthesizeSpeech")
-	}
-
-	if err := os.WriteFile(fullPath, resp.AudioContent, 0644); err != nil {
-		return "", nil, fmt.Errorf("failed to write audio content to file: %v", err)
-	}
-
-	var wordTimings []*speechpb.WordInfo
-	wordTimings, err = ExtractWordTimings(fullPath)
+	path, err := findNextAvailableFilename(dir, ".mp3")
 	if err != nil {
 		return "", nil, err
 	}
 
-	return fullPath, wordTimings, nil
-}
-
-func ExtractWordTimings(audioFilePath string) ([]*speechpb.WordInfo, error) {
-	ctx := context.Background()
-
-	apiKey := os.Getenv("GOOGLE_API_KEY")
-	if apiKey == "" {
-		return nil, fmt.Errorf("GOOGLE_API_KEY environment variable is not set")
-	}
-
-	client, err := speech.NewClient(ctx, option.WithAPIKey(apiKey))
+	// Download the MP3 file from OutputUri
+	err = downloadFile(apiResponse.OutputUri, path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create speech client: %v", err)
-	}
-	defer client.Close()
-
-	convertedFilePath := filepath.Join(filepath.Dir(audioFilePath), "converted_audio.wav")
-
-	if err := ConvertAudioFile(audioFilePath, convertedFilePath, 1, 16000); err != nil {
-		return nil, err
+		return "", nil, fmt.Errorf("failed to download MP3 file: %v", err)
 	}
 
-	data, err := os.ReadFile(convertedFilePath)
+	// Download the JSON file from TimestampsUri
+	resp, err = http.Get(apiResponse.TimestampsUri)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read audio file: %v", err)
+		return "", nil, fmt.Errorf("failed to download JSON from URL %s: %v", apiResponse.TimestampsUri, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", nil, fmt.Errorf("failed to download JSON from URL %s: status code %d", apiResponse.TimestampsUri, resp.StatusCode)
 	}
 
-	req := &speechpb.LongRunningRecognizeRequest{
-		Config: &speechpb.RecognitionConfig{
-			Encoding:              speechpb.RecognitionConfig_LINEAR16,
-			SampleRateHertz:       16000,
-			LanguageCode:          "en-US",
-			EnableWordTimeOffsets: true,
-			AudioChannelCount:     1,
-		},
-		Audio: &speechpb.RecognitionAudio{
-			AudioSource: &speechpb.RecognitionAudio_Content{Content: data},
-		},
+	var wordInfos []WordInfo
+	if err := json.NewDecoder(resp.Body).Decode(&wordInfos); err != nil {
+		return "", nil, fmt.Errorf("failed to decode JSON response: %v", err)
 	}
 
-	op, err := client.LongRunningRecognize(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initiate speech recognition: %v", err)
-	}
-	resp, err := op.Wait(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to complete speech recognition: %v", err)
-	}
-
-	var wordInfos []*speechpb.WordInfo
-	for _, result := range resp.Results {
-		for _, alt := range result.Alternatives {
-			wordInfos = append(wordInfos, alt.Words...)
-		}
-	}
-	return wordInfos, nil
+	return path, wordInfos, nil
 }
