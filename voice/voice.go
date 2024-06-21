@@ -82,6 +82,11 @@ func downloadFile(url string, path string) error {
 
 // ConvertTextToSpeech sends text to UnrealSpeech API and returns the path to the saved MP3 file and the timing information of words
 func ConvertTextToSpeech(text string) (string, []WordInfo, error) {
+
+	if len(text) >= 3000 {
+		return "", nil, fmt.Errorf("the lenght of the string is to long. max 3000 characters. current string %v", len(text))
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

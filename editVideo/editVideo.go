@@ -116,15 +116,6 @@ func EditVideo(inputVideoPath string, inputAudioPath string, wordTimings []voice
 		return "", err
 	}
 
-	// Get video duration using ffprobe
-	videoDuration, err := getVideoDuration(inputVideoPath)
-	if err != nil {
-		return "", err
-	}
-
-	// Calculate the number of times to loop the video
-	loopCount := int(audioDuration / videoDuration)
-
 	// Escape text for FFmpeg
 	escapedAuthorText := escapeText(authorText)
 	words, timingStrings := splitTextIntoWordsWithTimings(wordTimings, escapedAuthorText, audioDuration)
@@ -163,7 +154,7 @@ func EditVideo(inputVideoPath string, inputAudioPath string, wordTimings []voice
 
 	// FFmpeg command for creating the video with text overlays and adding audio, and looping the video if necessary
 	cmdArgs := []string{
-		"-stream_loop", strconv.Itoa(loopCount), // Loop the video input
+		"-stream_loop", "-1", // Infinite loop for video
 		"-i", inputVideoPath,
 		"-i", inputAudioPath,
 		"-i", "youtube_logo.png", // Add the YouTube logo image

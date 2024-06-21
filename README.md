@@ -23,10 +23,13 @@ The file *global/variables.go* is a makeshift control panel. Here you can change
 
 When you are happy with the *settings* you may run the bot. in your terminal change your directory to the root of the project. There you can run the command ```go run main.go``` If you want to build the project in to an executable file. Then run the command ```go build -o X``` where X is the name you want the built project to have. However, the code loads some env variables. This will have to be manually set, or you can create a script to load the env variables then run the executable. Example code:
 ```sh
+
 #!/bin/bash
 
-# Source the environment variables
-source /home/heier/videoCreater/.env
+export PEXELS_API_KEY='VALUE'
+export FAVQS_API_KEY='VALUE'
+export GOOGLE_API_KEY='VALUE'
+export UNREAL_SPEECH_API_KEY='VALUE'
 
 # Run the executable
 /home/heier/videoCreater/videomaker

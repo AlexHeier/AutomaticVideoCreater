@@ -12,7 +12,7 @@ var ChannelName string = "QuotePixel"
 var MadeForKids bool = false
 
 // AI voice
-var VoiceID string = "Scarlett"
+var VoiceID string = "Liv"  // Other voices: Scarlett, Liv, Amy, Dan and Will
 var VoiceSpeed string = "0" // -1 to 1
 var VoicePitch string = "1" // 0.5 to 1.5
 var Bitrate string = "192k" // 320k, 256k, 192k, ...
