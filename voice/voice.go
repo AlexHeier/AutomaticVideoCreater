@@ -81,12 +81,58 @@ func downloadFile(url string, path string) error {
 }
 
 // ConvertTextToSpeech sends text to UnrealSpeech API and returns the path to the saved MP3 file and the timing information of words
-func ConvertTextToSpeech(text string) (string, []WordInfo, error) {
+func ConvertTextToSpeech(text string) ([]string, [][]WordInfo, error) {
+	chunks := assembleChunks(text)
+	var paths []string
+	var allWordInfos [][]WordInfo
 
-	if len(text) >= 3000 {
-		return "", nil, fmt.Errorf("the lenght of the string is to long. max 3000 characters. current string %v", len(text))
+	for _, chunk := range chunks {
+		path, wordInfos, err := processTextChunk(chunk)
+		if err != nil {
+			return nil, nil, err
+		}
+		paths = append(paths, path)
+		allWordInfos = append(allWordInfos, wordInfos)
 	}
 
+	return paths, allWordInfos, nil
+}
+
+// assembleChunks divides text into chunks that do not exceed the maximum size defined in global.MaxVoiceCharacters, respecting sentence boundaries.
+func assembleChunks(text string) []string {
+	var chunks []string
+	var currentChunk strings.Builder
+	sentences := strings.FieldsFunc(text, func(r rune) bool {
+		return r == '.' || r == '?' || r == '!'
+	})
+
+	currentLength := 0
+	for _, sentence := range sentences {
+		sentence = strings.TrimSpace(sentence) + " " // Add the punctuation back with a space for natural reading
+		sentenceLength := len(sentence)
+
+		if currentLength+sentenceLength > global.MaxVoiceCharacters {
+			if currentChunk.Len() > 0 {
+				chunks = append(chunks, currentChunk.String())
+				currentChunk.Reset()
+				currentLength = 0
+			}
+		}
+
+		currentChunk.WriteString(sentence)
+		currentLength += sentenceLength
+	}
+
+	// Ensure the last chunk is added
+	if currentChunk.Len() > 0 {
+		chunks = append(chunks, currentChunk.String())
+	}
+
+	return chunks
+}
+
+// processTextChunk handles the interaction with the UnrealSpeech API for a single text chunk
+func processTextChunk(text string) (string, []WordInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

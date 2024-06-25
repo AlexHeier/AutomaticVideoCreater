@@ -15,19 +15,25 @@ require (
 	github.com/antchfx/htmlquery v1.3.1 // indirect
 	github.com/antchfx/xmlquery v1.4.0 // indirect
 	github.com/antchfx/xpath v1.3.0 // indirect
+	github.com/bitly/go-simplejson v0.5.1 // indirect
+	github.com/dlclark/regexp2 v1.11.0 // indirect
+	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gocolly/colly v1.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/google/pprof v0.0.0-20240227163752-401108e1b7e7 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.4 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
+	github.com/kkdai/youtube/v2 v2.10.1 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
 	go.opencensus.io v0.24.0 // indirect

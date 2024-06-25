@@ -107,7 +107,7 @@ func sanitizeDescription(baseDescription string, tags []string) string {
 	return description
 }
 
-func UploadVideo(videoPath, description, title, categoryID string, tags []string) error {
+func UploadVideoYoutube(videoPath, description, title, categoryID string, tags []string) error {
 	ctx := context.Background()
 
 	b, err := os.ReadFile("client_secret.json")

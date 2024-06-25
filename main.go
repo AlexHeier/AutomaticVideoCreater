@@ -5,6 +5,7 @@ import (
 	"os"
 
 	createQuoteVideo "videoCreater/createQuoteVideo"
+	createredditvideo "videoCreater/createredditvideo"
 
 	"github.com/joho/godotenv"
 )
@@ -14,7 +15,29 @@ func init() {
 }
 
 func main() {
-	createQuoteVideo.CreateQuoteVideo()
+	// Checks if the minimum number of arguments is not met
+	if len(os.Args) < 2 {
+		log.Println("Usage: videocreater <videotype> [extra info]")
+		os.Exit(1)
+	}
+	videoType := os.Args[1]
+
+	switch videoType {
+	case "quote":
+		createQuoteVideo.CreateQuoteVideo()
+
+	case "reddit":
+		// Ensure that subreddit argument is also provided
+		if len(os.Args) < 3 {
+			log.Println("videotype 'reddit' requires the subreddit name as well")
+			os.Exit(1)
+		}
+		createredditvideo.CreateRedditVideo(os.Args[2])
+
+	default:
+		log.Println("Unknown videotype. Use 'quote' or 'reddit'.")
+		os.Exit(1) // Exit after logging the unknown type error
+	}
 }
 
 // Initialize environment and verify configuration
