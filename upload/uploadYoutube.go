@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"videoCreater/global"
 
@@ -24,6 +25,19 @@ func getClient(ctx context.Context, config *oauth2.Config) *http.Client {
 	if err != nil {
 		token = getTokenFromWeb(ctx, config)
 		saveToken(tokenFile, token)
+	} else if token.Expiry.Before(time.Now()) {
+		// Check if the token is expired and attempt to refresh it
+		if token.RefreshToken == "" {
+			fmt.Println("Refresh token not available. Please re-authenticate.")
+			token = getTokenFromWeb(ctx, config)
+		} else {
+			newToken, err := config.TokenSource(ctx, token).Token() // This will automatically use the refresh token
+			if err != nil {
+				log.Fatalf("Failed to refresh access token: %v", err)
+			}
+			saveToken(tokenFile, newToken)
+			token = newToken
+		}
 	}
 	return config.Client(ctx, token)
 }
