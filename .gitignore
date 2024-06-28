@@ -7,5 +7,6 @@ raw-videos/
 edited-videos/
 
 videomaker
+run_videomaker.sh
 
 createRedditVideo/last_post_data.json

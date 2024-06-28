@@ -8,7 +8,7 @@ VAR THAT CAN BE CHANGED
 var YoutubeChannelName string = "QuotePixel"
 
 var PostYoutubeVideo bool = true
-var DeleteYoutubeVideoAfterPost bool = false
+var DeleteYoutubeVideoAfterPost bool = true
 var MadeForKids bool = false
 
 // TikTok
@@ -44,4 +44,4 @@ DO NOT CHANGE
 // The Youtube # limit
 const TagLimit int = 15
 
-const MaxVoiceCharacters int = 2900
+const MaxVoiceCharacters int = 2000
