@@ -2,7 +2,9 @@ package editVideo
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"videoCreater/global"
@@ -28,7 +30,14 @@ func EditVideoYoutube(inputVideoPath string, inputAudioPath string, wordTimings 
 	fontPath := "fonts/PermanentMarker-Regular.ttf"
 
 	// Youtube logo image
-	youtubeLogo := "logos/youtube_logo.png"
+	ex, err := os.Executable()
+	if err != nil {
+		fmt.Println("Error getting executable path:", err)
+		return "", nil
+	}
+	basePath := filepath.Dir(ex)
+	youtubeLogo := filepath.Join(basePath, "logos/youtube_logo.png")
+
 	// Determine the output video path
 	outputDir := "edited-videos"
 	outputFilename := findNextAvailableFilename(outputDir, removeSpaces(title), ".mp4")

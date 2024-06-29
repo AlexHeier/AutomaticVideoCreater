@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"videoCreater/global"
@@ -21,6 +22,16 @@ func EditVideoTikTok(inputVideoPath string, inputAudioPaths []string, wordTiming
 
 	var outputFilenames []string
 	var elapsedTime float64
+	var tikTokLogo string
+	var basePath string
+
+	ex, err := os.Executable()
+	if err != nil {
+		fmt.Println("Error getting executable path:", err)
+		return nil, nil
+	}
+	basePath = filepath.Dir(ex)
+	tikTokLogo = filepath.Join(basePath, "logos/tiktok_logo.png")
 
 	for i := range inputAudioPaths {
 
@@ -31,7 +42,6 @@ func EditVideoTikTok(inputVideoPath string, inputAudioPaths []string, wordTiming
 		fontPath := "fonts/PermanentMarker-Regular.ttf"
 
 		// TikTok logo image
-		tikTokLogo := "logos/tiktok_logo.png"
 
 		// Determine the output video path
 		outputDir := "edited-videos"
