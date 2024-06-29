@@ -22,16 +22,6 @@ func EditVideoTikTok(inputVideoPath string, inputAudioPaths []string, wordTiming
 
 	var outputFilenames []string
 	var elapsedTime float64
-	var tikTokLogo string
-	var basePath string
-
-	ex, err := os.Executable()
-	if err != nil {
-		fmt.Println("Error getting executable path:", err)
-		return nil, nil
-	}
-	basePath = filepath.Dir(ex)
-	tikTokLogo = filepath.Join(basePath, "logos/tiktok_logo.png")
 
 	for i := range inputAudioPaths {
 
@@ -42,6 +32,15 @@ func EditVideoTikTok(inputVideoPath string, inputAudioPaths []string, wordTiming
 		fontPath := "fonts/PermanentMarker-Regular.ttf"
 
 		// TikTok logo image
+		tikTokLogoURL := "https://cdn4.iconfinder.com/data/icons/social-media-flat-7/64/Social-media_Tiktok-512.png"
+		tikTokLogoPath := filepath.Join("logos", "tiktok_logo.png")
+		err := DownloadImage(tikTokLogoURL, tikTokLogoPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to download YouTube logo: %v", err)
+		}
+
+		// Ensure the image is deleted after the function completes
+		defer os.Remove(tikTokLogoURL)
 
 		// Determine the output video path
 		outputDir := "edited-videos"
@@ -106,7 +105,7 @@ func EditVideoTikTok(inputVideoPath string, inputAudioPaths []string, wordTiming
 		cmdArgs := []string{
 			"-i", inputVideoPath,
 			"-i", inputAudioPaths[i],
-			"-i", tikTokLogo,
+			"-i", tikTokLogoURL,
 			"-filter_complex_script", filterFile.Name(),
 			"-map", "[v]",
 			"-map", "[a]",

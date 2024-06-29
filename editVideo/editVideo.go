@@ -2,6 +2,8 @@ package editVideo
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -133,4 +135,28 @@ func splitTitleIntoLines(title string, maxLength int) []string {
 	}
 
 	return lines
+}
+
+// DownloadImage downloads an image from the given URL and saves it to the specified path
+func DownloadImage(url, filepath string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to download image: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %v", err)
+	}
+	defer out.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to write to file: %v", err)
+	}
+
+	return nil
 }

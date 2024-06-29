@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-
 	"videoCreater/global"
 	voice "videoCreater/voice"
 )
@@ -29,14 +28,16 @@ func EditVideoYoutube(inputVideoPath string, inputAudioPath string, wordTimings 
 	// Specify the path to the font file
 	fontPath := "fonts/PermanentMarker-Regular.ttf"
 
-	// Youtube logo image
-	ex, err := os.Executable()
+	// Download the YouTube logo image
+	youtubeLogoURL := "https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png"
+	youtubeLogoPath := filepath.Join("logos", "youtube_logo.png")
+	err = DownloadImage(youtubeLogoURL, youtubeLogoPath)
 	if err != nil {
-		fmt.Println("Error getting executable path:", err)
-		return "", nil
+		return "", fmt.Errorf("failed to download YouTube logo: %v", err)
 	}
-	basePath := filepath.Dir(ex)
-	youtubeLogo := filepath.Join(basePath, "logos/youtube_logo.png")
+
+	// Ensure the image is deleted after the function completes
+	defer os.Remove(youtubeLogoPath)
 
 	// Determine the output video path
 	outputDir := "edited-videos"
@@ -72,7 +73,7 @@ func EditVideoYoutube(inputVideoPath string, inputAudioPath string, wordTimings 
 		"-stream_loop", "-1", // Infinite loop for video
 		"-i", inputVideoPath,
 		"-i", inputAudioPath,
-		"-i", youtubeLogo, // Add the YouTube logo image
+		"-i", youtubeLogoPath, // Add the YouTube logo image
 		"-filter_complex", filterComplex,
 		"-map", "[v]",
 		"-map", "[a]",
