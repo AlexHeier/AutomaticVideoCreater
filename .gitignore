@@ -5,6 +5,7 @@ token.json
 text-to-speeched/
 raw-videos/
 edited-videos/
+logos/
 
 videomaker
 run_videomaker.sh
