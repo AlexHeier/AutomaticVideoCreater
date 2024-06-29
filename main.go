@@ -5,7 +5,7 @@ import (
 	"os"
 
 	createQuoteVideo "videoCreater/createQuoteVideo"
-	createredditvideo "videoCreater/createredditvideo"
+	createRedditVideo "videoCreater/createRedditVideo"
 
 	"github.com/joho/godotenv"
 )
@@ -32,7 +32,7 @@ func main() {
 			log.Println("videotype 'reddit' requires the subreddit name as well")
 			os.Exit(1)
 		}
-		createredditvideo.CreateRedditVideo(os.Args[2])
+		createRedditVideo.CreateRedditVideo(os.Args[2])
 
 	default:
 		log.Println("Unknown videotype. Use 'quote' or 'reddit'.")

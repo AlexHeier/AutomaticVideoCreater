@@ -60,7 +60,7 @@ func EditVideoTikTok(inputVideoPath string, inputAudioPaths []string, wordTiming
 		if partSuffix != "" {
 			drawtextFilters = append(drawtextFilters, fmt.Sprintf(
 				"drawtext=fontfile='%s':text='%s':x=(w-text_w)/2:y=h-th-200:fontsize=80:fontcolor=white:borderw=%d:bordercolor=black",
-				fontPath, escapeText(partSuffix), global.BorderThickness))
+				fontPath, escapeText(fmt.Sprintf("part %v of %v", i+1, len(inputAudioPaths))), global.BorderThickness))
 		}
 		// Words centered in the middle of the screen
 		for j, word := range words {

@@ -44,4 +44,4 @@ DO NOT CHANGE
 // The Youtube # limit
 const TagLimit int = 15
 
-const MaxVoiceCharacters int = 2000
+const MaxVoiceCharacters int = 1500
