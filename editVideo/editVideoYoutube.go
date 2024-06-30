@@ -70,6 +70,7 @@ func EditVideoYoutube(inputVideoPath string, inputAudioPath string, wordTimings 
 
 	// FFmpeg command for creating the video with text overlays and adding audio, and looping the video if necessary
 	cmdArgs := []string{
+		"-xerror",
 		"-stream_loop", "-1", // Infinite loop for video
 		"-i", inputVideoPath,
 		"-i", inputAudioPath,

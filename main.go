@@ -42,10 +42,7 @@ func main() {
 
 // Initialize environment and verify configuration
 func initConfig() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("No .env file found")
-	}
+	godotenv.Load()
 
 	// Check if the API key is set
 	apiKey := os.Getenv("GOOGLE_API_KEY")
@@ -57,6 +54,7 @@ func initConfig() {
 	ensureDirExists("raw-videos")
 	ensureDirExists("edited-videos")
 	ensureDirExists("text-to-speeched")
+	ensureDirExists("logos")
 }
 
 // Ensure directory exists

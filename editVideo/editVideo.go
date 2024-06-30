@@ -139,11 +139,17 @@ func splitTitleIntoLines(title string, maxLength int) []string {
 
 // DownloadImage downloads an image from the given URL and saves it to the specified path
 func DownloadImage(url, filepath string) error {
+	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("failed to download image: %v", err)
 	}
 	defer resp.Body.Close()
+
+	// Check server response
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned non-200 status: %d %s", resp.StatusCode, resp.Status)
+	}
 
 	// Create the file
 	out, err := os.Create(filepath)
@@ -156,6 +162,11 @@ func DownloadImage(url, filepath string) error {
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to write to file: %v", err)
+	}
+
+	// Set read and write permissions for owner, read for group and others
+	if err := os.Chmod(filepath, 0644); err != nil {
+		return fmt.Errorf("failed to set file permissions: %v", err)
 	}
 
 	return nil

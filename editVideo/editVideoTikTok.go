@@ -40,7 +40,7 @@ func EditVideoTikTok(inputVideoPath string, inputAudioPaths []string, wordTiming
 		}
 
 		// Ensure the image is deleted after the function completes
-		defer os.Remove(tikTokLogoURL)
+		defer os.Remove(tikTokLogoPath)
 
 		// Determine the output video path
 		outputDir := "edited-videos"
@@ -103,9 +103,11 @@ func EditVideoTikTok(inputVideoPath string, inputAudioPaths []string, wordTiming
 
 		// FFmpeg command for creating the video with text overlays and adding audio, and looping the video if necessary
 		cmdArgs := []string{
+			"-xerror",
+			"-stream_loop", "-1",
 			"-i", inputVideoPath,
 			"-i", inputAudioPaths[i],
-			"-i", tikTokLogoURL,
+			"-i", tikTokLogoPath,
 			"-filter_complex_script", filterFile.Name(),
 			"-map", "[v]",
 			"-map", "[a]",
