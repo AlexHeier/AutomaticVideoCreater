@@ -3,6 +3,7 @@ package editVideo
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -138,7 +139,7 @@ func splitTitleIntoLines(title string, maxLength int) []string {
 }
 
 // DownloadImage downloads an image from the given URL and saves it to the specified path
-func DownloadImage(url, filepath string) error {
+func DownloadImage(url, relativePath string) error {
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
@@ -151,8 +152,16 @@ func DownloadImage(url, filepath string) error {
 		return fmt.Errorf("server returned non-200 status: %d %s", resp.StatusCode, resp.Status)
 	}
 
+	path, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get working dir: %v", err)
+	}
+
+	fullPath := filepath.Join(path, relativePath)
+	log.Println(fullPath)
+
 	// Create the file
-	out, err := os.Create(filepath)
+	out, err := os.Create(fullPath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %v", err)
 	}
@@ -165,7 +174,7 @@ func DownloadImage(url, filepath string) error {
 	}
 
 	// Set read and write permissions for owner, read for group and others
-	if err := os.Chmod(filepath, 0644); err != nil {
+	if err := os.Chmod(fullPath, 0644); err != nil {
 		return fmt.Errorf("failed to set file permissions: %v", err)
 	}
 
