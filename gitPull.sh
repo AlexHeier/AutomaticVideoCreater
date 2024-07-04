@@ -1,5 +1,7 @@
 #!/bin/bash
 
+shutdown -r now
+
 GIT_REPO_DIR="/home/heier/videoCreater"
 
 cd "$GIT_REPO_DIR" || exit 1

@@ -32,8 +32,8 @@ func FetchAndStoreVideosPexels(theme string, amount int) ([]string, error) {
 	var videoPaths []string
 	seenIDs := make(map[int]bool) // To avoid downloading duplicates
 
-	for len(videoPaths) < amount {
-		url := fmt.Sprintf("https://api.pexels.com/videos/search?query=%s&per_page=%d", theme, amount*2) // Request more to account for filtering
+	for i := 0; i < amount; i++ {
+		url := fmt.Sprintf("https://api.pexels.com/videos/search?query=%s&per_page=%d", theme, amount)
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create request: %v", err)
