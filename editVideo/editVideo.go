@@ -3,7 +3,6 @@ package editVideo
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -158,7 +157,6 @@ func DownloadImage(url, relativePath string) error {
 	}
 
 	fullPath := filepath.Join(path, relativePath)
-	log.Println(fullPath)
 
 	// Create the file
 	out, err := os.Create(fullPath)

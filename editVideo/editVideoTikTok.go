@@ -23,24 +23,24 @@ func EditVideoTikTok(inputVideoPath string, inputAudioPaths []string, wordTiming
 	var outputFilenames []string
 	var elapsedTime float64
 
+	// Specify the path to the font file
+	fontPath := "fonts/PermanentMarker-Regular.ttf"
+
+	// TikTok logo image
+	tikTokLogoURL := "https://cdn4.iconfinder.com/data/icons/social-media-flat-7/64/Social-media_Tiktok-512.png"
+	tikTokLogoPath := filepath.Join("logos", "tiktok_logo.png")
+	err := DownloadImage(tikTokLogoURL, tikTokLogoPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download YouTube logo: %v", err)
+	}
+
+	// Ensure the image is deleted after the function completes
+	defer os.Remove(tikTokLogoPath)
+
 	for i := range inputAudioPaths {
 
 		// Escape text for FFmpeg
 		words, timingStrings, endTime := splitTextIntoWordsWithTimings(wordTimings[i])
-
-		// Specify the path to the font file
-		fontPath := "fonts/PermanentMarker-Regular.ttf"
-
-		// TikTok logo image
-		tikTokLogoURL := "https://cdn4.iconfinder.com/data/icons/social-media-flat-7/64/Social-media_Tiktok-512.png"
-		tikTokLogoPath := filepath.Join("logos", "tiktok_logo.png")
-		err := DownloadImage(tikTokLogoURL, tikTokLogoPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to download YouTube logo: %v", err)
-		}
-
-		// Ensure the image is deleted after the function completes
-		defer os.Remove(tikTokLogoPath)
 
 		// Determine the output video path
 		outputDir := "edited-videos"
@@ -82,9 +82,9 @@ func EditVideoTikTok(inputVideoPath string, inputAudioPaths []string, wordTiming
 			"drawtext=fontfile='%s':text='%s':x=(w-text_w)/2:y=h-th-50:fontsize=%d:fontcolor=white:borderw=%d:bordercolor=black",
 			fontPath, global.TikTokChannelName, fontSize, global.BorderThickness))
 
-		// Combine all drawtext filters
+		// Adds the tiktok logo to the video
 		filterComplex := fmt.Sprintf(
-			"[0:v]trim=start=%f,setpts=PTS-STARTPTS,scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,%s[v];[1:a]volume=2[a];[2:v]scale=-1:%d[tiktok_logo];[v][tiktok_logo]overlay=x=25:y=main_h-overlay_h-50[v]",
+			"[0:v]trim=start=%f,setpts=PTS-STARTPTS,scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,%s[v];[1:a]volume=2[a];[2:v]scale=-1:%d[tiktok_logo];[v][tiktok_logo]overlay=x=30:y=main_h-overlay_h-40[v]",
 			elapsedTime+60, strings.Join(drawtextFilters, ","), fontSize) // Add 60 seconds to the elapsed time
 
 		// Write filter complex to a temporary file

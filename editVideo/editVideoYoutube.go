@@ -63,9 +63,9 @@ func EditVideoYoutube(inputVideoPath string, inputAudioPath string, wordTimings 
 		"drawtext=fontfile='%s':text='%s':x=(w-text_w)/2:y=h-th-50:fontsize=%d:fontcolor=white:borderw=%d:bordercolor=black",
 		fontPath, global.YoutubeChannelName, fontSize, global.BorderThickness))
 
-	// Combine all drawtext filters
+	// Adds the logo image to the video
 	filterComplex := fmt.Sprintf(
-		"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,%s[v];[1:a]volume=2[a];[2:v]scale=-1:%d[youtube_logo];[v][youtube_logo]overlay=x=25:y=main_h-overlay_h-50[v]",
+		"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,%s[v];[1:a]volume=2[a];[2:v]scale=-1:%d[youtube_logo];[v][youtube_logo]overlay=x=90:y=main_h-overlay_h-40[v]",
 		strings.Join(drawtextFilters, ","), fontSize)
 
 	// FFmpeg command for creating the video with text overlays and adding audio, and looping the video if necessary
